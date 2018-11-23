@@ -1,0 +1,13 @@
+- test directory contains the test images. These are rotated in random
+  directions and the test-labels.txt file contains the correct
+  orientation label.
+
+- train directory contains the train images. These are all at 0
+  degrees orientation; the make-train-data.sh script rotates them
+  explicitly to generate training data.
+
+- You can run the scripts like this:
+
+make-test-data.sh test-labels.txt > test-data.txt
+make-train-data.sh train-labels.txt > train-data.txt
+
