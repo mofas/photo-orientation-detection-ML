@@ -80,7 +80,15 @@ def train(input_file, output_file, model):
     return
 
 
+def export_result_to_file(result):
+    with open('output.txt', 'w') as file:
+        for row in result:
+            file.write(" ".join(row) + "\n")
+
+
 def test(test_file, model_file, model):
+
+    result = []
 
     if model == 'nearest':
         with open(model_file, 'r') as file:
@@ -91,10 +99,15 @@ def test(test_file, model_file, model):
         with open(test_file, 'r') as file:
             test_data = file.readlines()
 
-        results = []
         for row in test_data:
-            results.append(nearest_classify(general_extract_image_data(row)))
-            break
+            data = general_extract_image_data(row)
+            result.append([data["filename"], nearest_classify(data)])
+
+    # for testing
+    for row in result:
+        print(" ".join(row))
+    # export results to file
+    # export_result_to_file(result)
 
     return
 
