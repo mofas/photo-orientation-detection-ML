@@ -1,16 +1,10 @@
-# model is nearest, adaboost, forest, or best
 import sys
 import heapq
+import pickle
 import numpy as np
 
 
-def vector_diff(img_data1, img_data2):
-    diff = 0
-    for i in range(192):
-        diff += (img_data1["data"][i] - img_data2["data"][i])**2
-    return diff
-
-
+# General function
 def general_extract_image_data(img_info):
     data = img_info.split(' ')
     return {
@@ -21,7 +15,7 @@ def general_extract_image_data(img_info):
 
 
 # for nearest model
-def nearest_extract_image_data(img_info):
+def extract_nearest_model_data(img_info):
     data = img_info.split(' ')
     return {'label': data[0], 'data': [int(x) for x in data[1:]]}
 
@@ -39,6 +33,13 @@ model_best = []
 
 # Hyperparameter
 NEAREST_K = 10
+
+
+def vector_diff(img_data1, img_data2):
+    diff = 0
+    for i in range(192):
+        diff += (img_data1["data"][i] - img_data2["data"][i])**2
+    return diff
 
 
 def nearest_classify(test_data):
@@ -67,6 +68,33 @@ def nearest_classify(test_data):
     return max(pred_ret, key=pred_ret.get)
 
 
+def train_adaboost_model(train_data):
+    dataset = []
+
+    model = {}
+    for row in train_data:
+        dataset.append(general_extract_image_data(row))
+
+    # print(dataset[:10])
+
+    for i in range(192):
+        for j in range(192):
+            if i != j:
+                freq = {'0': 0, '90': 0, '180': 0, '270': 0}
+                for row in dataset:
+                    if row["data"][i] > row["data"][j]:
+                        freq[row["label"]] += 1
+                # print(freq)
+                model[(i, j)] = max(freq, key=freq.get)
+    return model
+
+
+def adaboost_classify(test_data):
+    pred_ret = {}
+
+    return max(pred_ret, key=pred_ret.get)
+
+
 def train(input_file, output_file, model):
     with open(input_file, 'r') as file:
         train_data = file.readlines()
@@ -76,7 +104,11 @@ def train(input_file, output_file, model):
         with open(output_file, 'w') as file:
             for row in train_data:
                 file.write(" ".join(row.split(' ')[1:]))
-
+    elif model == 'adaboost':
+        model_adaboost = train_adaboost_model(train_data)
+        # print(model_adaboost)
+        with open(output_file, 'w') as file:
+            pickle.dump(model_adaboost, file)
     return
 
 
@@ -87,21 +119,29 @@ def export_result_to_file(result):
 
 
 def test(test_file, model_file, model):
-
+    test_data = []
     result = []
+
+    with open(test_file, 'r') as file:
+        test_data = file.readlines()
 
     if model == 'nearest':
         with open(model_file, 'r') as file:
             model_data = file.readlines()
         for row in model_data:
-            model_nearest.append(nearest_extract_image_data(row))
-
-        with open(test_file, 'r') as file:
-            test_data = file.readlines()
+            model_nearest.append(extract_nearest_model_data(row))
 
         for row in test_data:
             data = general_extract_image_data(row)
             result.append([data["filename"], nearest_classify(data)])
+
+    elif model == 'adaboost':
+        with open(model_file, 'r') as file:
+            model_adaboost = pickle.load(file)
+
+        for row in test_data:
+            data = general_extract_image_data(row)
+            result.append([data["filename"], adaboost_classify(data)])
 
     # for testing
     for row in result:
@@ -112,11 +152,23 @@ def test(test_file, model_file, model):
     return
 
 
+#
+# Test nearest
 # train("/Users/cyli/code/cli3-a4/train-data-s.txt",
 #       "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
+# test("/Users/cyli/code/cli3-a4/test-data-s.txt",
+#      "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
+
+#
+#
+#
+# Test adaboost
+
+# train("/Users/cyli/code/cli3-a4/train-data-s.txt",
+#       "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
 
 test("/Users/cyli/code/cli3-a4/test-data-s.txt",
-     "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
+     "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
 
 # task_type = sys.argv[1]
 

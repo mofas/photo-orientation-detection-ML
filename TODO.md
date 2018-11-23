@@ -1,6 +1,6 @@
 # read args from argv
 
-# output model file
+# Write adaboost model
 
 nearest_model.txt,
 adaboost_model.txt,
