@@ -25,9 +25,6 @@ def extract_nearest_model_data(img_info):
 
 # img_data1 = extract_image_data(img1)
 # img_data2 = extract_image_data(img2)
-
-model_nearest = []
-model_adaboost = []
 model_forest = []
 model_best = []
 
@@ -42,12 +39,12 @@ def vector_diff(img_data1, img_data2):
     return diff
 
 
-def nearest_classify(test_data):
+def nearest_classify(model_nearest, test_data):
     # find nearest K
     # we need priority queue to keep the best K cand in the queue
 
     cands = []
-    pred_ret = {}
+    pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
     for cand in model_nearest:
         diff = vector_diff(cand, test_data)
         heapq.heappush(cands, (-diff, cand["label"]))
@@ -58,10 +55,7 @@ def nearest_classify(test_data):
     # get the result
     while len(cands):
         (score, pred) = heapq.heappop(cands)
-        if pred not in pred_ret:
-            pred_ret[pred] = 1
-        else:
-            pred_ret[pred] += 1
+        pred_ret[pred] += 1
         # print("in", (score, pred))
 
     # print(pred_ret, max(pred_ret, key=pred_ret.get))
@@ -75,8 +69,6 @@ def train_adaboost_model(train_data):
     for row in train_data:
         dataset.append(general_extract_image_data(row))
 
-    # print(dataset[:10])
-
     for i in range(192):
         for j in range(192):
             if i != j:
@@ -89,8 +81,12 @@ def train_adaboost_model(train_data):
     return model
 
 
-def adaboost_classify(test_data):
-    pred_ret = {}
+def adaboost_classify(model_adaboost, test_data):
+    pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
+    for i in range(192):
+        for j in range(192):
+            if i != j and test_data["data"][i] > test_data["data"][j]:
+                pred_ret[model_adaboost[(i, j)]] += 1
 
     return max(pred_ret, key=pred_ret.get)
 
@@ -106,7 +102,6 @@ def train(input_file, output_file, model):
                 file.write(" ".join(row.split(' ')[1:]))
     elif model == 'adaboost':
         model_adaboost = train_adaboost_model(train_data)
-        # print(model_adaboost)
         with open(output_file, 'w') as file:
             pickle.dump(model_adaboost, file)
     return
@@ -128,20 +123,27 @@ def test(test_file, model_file, model):
     if model == 'nearest':
         with open(model_file, 'r') as file:
             model_data = file.readlines()
+
+        model_nearest = []
         for row in model_data:
             model_nearest.append(extract_nearest_model_data(row))
 
         for row in test_data:
             data = general_extract_image_data(row)
-            result.append([data["filename"], nearest_classify(data)])
+            result.append(
+                [data["filename"],
+                 nearest_classify(model_nearest, data)])
 
     elif model == 'adaboost':
+        model_adaboost = {}
         with open(model_file, 'r') as file:
             model_adaboost = pickle.load(file)
 
         for row in test_data:
             data = general_extract_image_data(row)
-            result.append([data["filename"], adaboost_classify(data)])
+            result.append(
+                [data["filename"],
+                 adaboost_classify(model_adaboost, data)])
 
     # for testing
     for row in result:
