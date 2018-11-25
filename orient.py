@@ -22,11 +22,11 @@ def extract_nearest_model_data(img_info):
     return {'label': data[0], 'data': [int(x) for x in data[1:]]}
 
 
-def get_best_label(dataset):
+def get_label_dist(dataset):
     pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
     for row in dataset:
         pred_ret[row["label"]] += 1
-    return max(pred_ret, key=pred_ret.get)
+    return (max(pred_ret, key=pred_ret.get), pred_ret)
 
 
 # img1 = "train/6179019779.jpg 180 142 135 134 148 141 139 146 139 137 134 127 122 126 121 119 87 81 87 107 124 155 112 132 167 135 128 125 115 108 102 104 97 94 111 108 110 110 124 149 123 141 172 122 140 173 120 139 173 126 120 116 108 113 126 103 116 141 127 143 173 128 148 181 129 148 181 129 148 183 127 146 184 143 155 178 142 160 191 139 157 188 130 147 177 110 131 163 126 147 180 143 162 196 143 162 197 91 114 149 93 115 150 86 108 141 70 92 125 61 85 119 66 93 128 106 132 167 137 161 197 83 110 148 92 117 154 98 123 158 92 118 154 94 117 148 97 124 155 88 119 160 91 122 164 201 212 227 196 209 225 199 213 228 204 216 229 207 219 232 203 218 233 176 194 215 173 190 212 197 210 231 177 197 225 172 194 225 189 206 231 200 214 235 198 214 237 213 226 244 218 229 245"
@@ -149,28 +149,40 @@ def get_split_by_idx_entropy(dataset, idx):
     elif gt_n == 0:
         entropy = (data_in_lt * 1.0 / total) * -lt_n * math.log(lt_n)
     elif lt_n == 0:
-        entropy = (data_in_lt * 1.0 / total) * -lt_n * math.log(lt_n)
+        entropy = (data_in_gt * 1.0 / total) * -lt_n * math.log(gt_n)
     else:
         entropy = (data_in_gt * 1.0 / total) * -gt_n * math.log(gt_n) + (
             data_in_lt * 1.0 / total) * -lt_n * math.log(lt_n)
     return (entropy, idx, best_gt_label, best_lt_label)
 
 
+def split_data_by_idx(dataset, idx):
+    gt_data = []
+    lt_data = []
+
+    for d in dataset:
+        if d["data"][idx] > THRESHOLD:
+            gt_data.append(d)
+        else:
+            lt_data.append(d)
+
+    return (lt_data, gt_data)
+
+
 def build_tree(dataset, choosed_idx):
-    data_count = len(dataset)
-    model = {}
+    data_len = len(dataset)
+    (best_label, label_dist) = get_label_dist(dataset)
 
-    # after we successfully classified a data point
-    # we will remove them from dataset
     # if remaining data is smaller than cut off freq, we stop
-    if len(dataset) > LEAVE_CUT_OFF:
-
-        # # TODO: if all data has same label, we stop
+    # if all data has same label, we also stop
+    # return best_label
+    if len(dataset) > LEAVE_CUT_OFF and label_dist[best_label] != data_len:
 
         # random choose a idx which is not choosen before
         try_idx = choosed_idx[:]
+
         # the best result we find yet
-        best_result = (2, '0', '0')
+        best_result = (2, 0, '0', '0')
 
         # randomly sampling try to get a good split
         for i in range(SPLIT_SAMPLING):
@@ -185,15 +197,20 @@ def build_tree(dataset, choosed_idx):
             # we have tried this idx
             try_idx.append(idx)
 
-        print(best_result)
+        (entropy, best_idx, best_gt_label, best_lt_label) = best_result
 
-        # TODO : do the spliting and recursive!
         # append selected idx to set
-        choosed_idx.append(best_result[0])
-        return model
+        choosed_idx.append(best_idx)
+
+        (lt_data, gt_data) = split_data_by_idx(dataset, best_idx)
+        return {
+            "idx": best_idx,
+            "lt": build_tree(lt_data, choosed_idx),
+            "gt": build_tree(gt_data, choosed_idx),
+        }
     else:
         # we return the prediction based on the most freq label
-        return get_best_label(dataset)
+        return best_label
 
 
 def build_forest(train_data):
@@ -202,6 +219,7 @@ def build_forest(train_data):
         dataset.append(general_extract_image_data(row))
     # TODO  splite data and create several tree
     tree = build_tree(dataset, [])
+    print("this is tree", tree)
 
 
 def train(input_file, output_file, model):

@@ -1,6 +1,8 @@
 # read args from argv
 
-# build a tree
+# adaboost will need to update training weight based on the previous result
+
+# Using tree to classify the data
 
 # how to serialize the decision tree
 
