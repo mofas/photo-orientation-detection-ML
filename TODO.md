@@ -1,6 +1,10 @@
 # read args from argv
 
-# Write adaboost model
+# build a tree
+
+# how to serialize the decision tree
+
+# split data and collect trees
 
 nearest_model.txt,
 adaboost_model.txt,

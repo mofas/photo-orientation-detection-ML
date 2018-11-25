@@ -1,6 +1,8 @@
 import sys
 import heapq
+import math
 import pickle
+import random
 import numpy as np
 
 
@@ -28,8 +30,18 @@ def extract_nearest_model_data(img_info):
 model_forest = []
 model_best = []
 
-# Hyperparameter
+#### Hyperparameter
 NEAREST_K = 10
+
+# the number of tree in forest
+NUM_OF_TREE = 20
+THRESHOLD = 127
+
+# Avoid overfitting
+# Using in build decision tree,
+# IF data in the set is fewer than cut_off
+# We just return the max possibility
+LEAVE_CUT_OFF = 1
 
 
 def vector_diff(img_data1, img_data2):
@@ -91,6 +103,92 @@ def adaboost_classify(model_adaboost, test_data):
     return max(pred_ret, key=pred_ret.get)
 
 
+# def divide_data_by_idx(dataset, idx):
+#     gt_data = []
+#     lt_data = []
+#     for target_list in expression_list:
+#         pass
+
+# This function will calculate
+
+
+def idx_entropy(dataset, idx):
+
+    total = len(dataset)
+    gt_pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
+    lt_pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
+    for d in dataset:
+        if d["data"][idx] > THRESHOLD:
+            gt_pred_ret[d["label"]] += 1
+        else:
+            lt_pred_ret[d["label"]] += 1
+    best_gt_label = max(gt_pred_ret, key=gt_pred_ret.get)
+    best_lt_label = max(lt_pred_ret, key=lt_pred_ret.get)
+
+    # This idx is not useful if we get both same label in both direction
+    if best_gt_label == best_lt_label:
+        return (1, best_gt_label, best_lt_label)
+
+    data_in_gt = sum(gt_pred_ret.values())
+    data_in_lt = sum(lt_pred_ret.values())
+
+    # This idx is not useful if all the data are in one side
+    if data_in_gt == 0 or data_in_lt == 0:
+        return (1, best_gt_label, best_lt_label)
+
+    gt_n = (data_in_gt - gt_pred_ret[best_gt_label]) * 1.0 / data_in_gt
+    lt_n = (data_in_lt - lt_pred_ret[best_lt_label]) * 1.0 / data_in_lt
+
+    entropy = (data_in_gt * 1.0 / total) * -gt_n * math.log(gt_n) + (
+        data_in_lt * 1.0 / total) * -lt_n * math.log(lt_n)
+
+    print(gt_pred_ret, best_gt_label)
+    print(lt_pred_ret, best_lt_label)
+    print(-gt_n * math.log(gt_n), data_in_gt, gt_n)
+    print(-lt_n * math.log(lt_n), data_in_lt, lt_n)
+    print(entropy)
+
+    return entropy
+
+
+def train_tree(train_data):
+    dataset = []
+    model = {}
+
+    for row in train_data:
+        dataset.append(general_extract_image_data(row))
+
+    data_count = len(dataset)
+    # how many data we have already classify
+    classified = 0
+    choosed_idx = []
+
+    # after we successfully classified a data point
+    # we will remove them from dataset
+    while len(dataset) > 0:
+        # random choose a idx which is not choosen before
+        try_idx = choosed_idx[:]
+        idx = random.randint(0, 192)
+
+        if len(try_idx) < 192:
+            while idx in try_idx:
+                idx = random.randint(0, 192)
+
+        # TODO: if all data has same label, we stop
+        # TODO: if remaining data is smaller than cut off freq, we stop
+        if len(dataset) <= LEAVE_CUT_OFF:
+            return
+
+        # check if this decision is good
+        idx_entropy(dataset, idx)
+
+        try_idx.append(idx)
+        choosed_idx.append(idx)
+        break
+
+    return model
+
+
 def train(input_file, output_file, model):
     with open(input_file, 'r') as file:
         train_data = file.readlines()
@@ -104,6 +202,9 @@ def train(input_file, output_file, model):
         model_adaboost = train_adaboost_model(train_data)
         with open(output_file, 'w') as file:
             pickle.dump(model_adaboost, file)
+    elif model == 'forest':
+        # TODO
+        train_tree(train_data)
     return
 
 
@@ -169,8 +270,16 @@ def test(test_file, model_file, model):
 # train("/Users/cyli/code/cli3-a4/train-data-s.txt",
 #       "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
 
-test("/Users/cyli/code/cli3-a4/test-data-s.txt",
-     "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
+# test("/Users/cyli/code/cli3-a4/test-data-s.txt",
+#      "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
+
+#
+#
+#
+# Test forest
+
+train("/Users/cyli/code/cli3-a4/test-data-s.txt",
+      "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
 
 # task_type = sys.argv[1]
 
