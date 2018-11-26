@@ -169,9 +169,10 @@ def build_tree(dataset, choosed_idx):
     data_len = len(dataset)
     (best_label, label_dist) = get_label_dist(dataset)
 
-    # if tree is too depth, then we stop
-    # if all data has same label, we also stop
+    # if tree is too deep, then we stop
+    # if all data have same labels, we also stop
     # return best_label
+    # Otherwise, we try to split dataset again
     if len(choosed_idx) < MAX_TREE_DEPTH and label_dist[best_label] != data_len:
 
         # random choose a idx which is not choosen before
@@ -218,7 +219,7 @@ def tree_classify(tree, data):
         return tree_classify(tree["lt"], data)
 
 
-def build_forest(train_data):
+def train_forest_model(train_data):
     dataset = []
     for row in train_data:
         dataset.append(general_extract_image_data(row))
@@ -257,7 +258,7 @@ def train(input_file, output_file, model):
         with open(output_file, 'w') as file:
             pickle.dump(model_adaboost, file)
     elif model == 'forest':
-        model_forest = build_forest(train_data)
+        model_forest = train_forest_model(train_data)
         with open(output_file, 'w') as file:
             pickle.dump(model_forest, file)
     return
@@ -347,8 +348,8 @@ def test(test_file, model_file, model):
 # train("/Users/cyli/code/cli3-a4/train-data-s.txt",
 #       "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
 
-test("/Users/cyli/code/cli3-a4/test-data-s.txt",
-     "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
+# test("/Users/cyli/code/cli3-a4/test-data-s.txt",
+#      "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
 
 # task_type = sys.argv[1]
 
