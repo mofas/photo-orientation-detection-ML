@@ -55,11 +55,11 @@ NUM_ADABOOST_CLASSIFIER = 500
 
 ### For forest
 # the number of tree in forest
-NUM_OF_TREE = 100
-THRESHOLD = 127
+NUM_OF_TREE = 400
+THRESHOLD = 180
 
 # Avoid overfitting
-MAX_TREE_DEPTH = 12
+MAX_TREE_DEPTH = 16
 
 # How many time we try to sample idx to split the data
 SPLIT_SAMPLING = 10
@@ -425,21 +425,21 @@ def test(test_file, model_file, model):
 #
 # Test adaboost
 
-# train("/Users/cyli/code/cli3-a4/train-data-s.txt",
-#       "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
+train("/Users/cyli/code/cli3-a4/train-data.txt",
+      "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
 
-# test("/Users/cyli/code/cli3-a4/test-data-s.txt",
-#      "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
+test("/Users/cyli/code/cli3-a4/test-data.txt",
+     "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
 
 #
 #
 #
 # Test forest
 
-# train("/Users/cyli/code/cli3-a4/train-data-s.txt",
+# train("/Users/cyli/code/cli3-a4/train-data.txt",
 #       "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
 
-# test("/Users/cyli/code/cli3-a4/test-data-s.txt",
+# test("/Users/cyli/code/cli3-a4/test-data.txt",
 #      "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
 
 #
@@ -458,14 +458,3 @@ def test(test_file, model_file, model):
 #       "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
 
 #
-#
-#
-#
-# # Test result
-
-test("/Users/cyli/code/cli3-a4/test-data.txt",
-     "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
-test("/Users/cyli/code/cli3-a4/test-data.txt",
-     "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
-test("/Users/cyli/code/cli3-a4/test-data.txt",
-     "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
