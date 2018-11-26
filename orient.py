@@ -22,6 +22,15 @@ def extract_nearest_model_data(img_info):
     return {'label': data[0], 'data': [int(x) for x in data[1:]]}
 
 
+def extract_adaboost_train_data(img_info, initial_weight):
+    data = img_info.split(' ')
+    return {
+        'weight': initial_weight,
+        'label': data[1],
+        'data': [int(x) for x in data[1:]]
+    }
+
+
 def get_label_dist(dataset):
     pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
     for row in dataset:
@@ -37,17 +46,23 @@ def get_label_dist(dataset):
 model_best = []
 
 #### Hyperparameter
-NEAREST_K = 10
 
+### For nearest k
+NEAREST_K = 50
+
+### For adaboost
+NUM_ADABOOST_CLASSIFIER = 500
+
+### For forest
 # the number of tree in forest
-NUM_OF_TREE = 20
+NUM_OF_TREE = 100
 THRESHOLD = 127
 
 # Avoid overfitting
-MAX_TREE_DEPTH = 8
+MAX_TREE_DEPTH = 12
 
 # How many time we try to sample idx to split the data
-SPLIT_SAMPLING = 5
+SPLIT_SAMPLING = 10
 
 
 def vector_diff(img_data1, img_data2):
@@ -80,31 +95,81 @@ def nearest_classify(model_nearest, test_data):
     return max(pred_ret, key=pred_ret.get)
 
 
-def train_adaboost_model(train_data):
-    dataset = []
+def get_hypotheses(dataset):
+    cands_map = {'0': [], '90': [], '180': [], '270': []}
 
-    model = {}
-    for row in train_data:
-        dataset.append(general_extract_image_data(row))
-
+    # Building the frequency mapping
     for i in range(192):
         for j in range(192):
             if i != j:
-                freq = {'0': 0, '90': 0, '180': 0, '270': 0}
+                freq_map = {'0': 0, '90': 0, '180': 0, '270': 0}
                 for row in dataset:
                     if row["data"][i] > row["data"][j]:
-                        freq[row["label"]] += 1
-                # print(freq)
-                model[(i, j)] = max(freq, key=freq.get)
+                        freq_map[row["label"]] += 1
+                # print(freq_map)
+                best_label = max(freq_map, key=freq_map.get)
+                heapq.heappush(cands_map[best_label],
+                               (-freq_map[best_label], i, j, best_label,
+                                freq_map[best_label]))
+
+    hypotheses = []
+    # get the best classifier from cands
+    for i in range(NUM_ADABOOST_CLASSIFIER / 4):
+        for label_type in cands_map:
+            (score, i, j, label, freq) = heapq.heappop(cands_map[label_type])
+            hypotheses.append((i, j, label, freq))
+    return hypotheses
+
+
+def normalize_weight(dataset):
+    weight_sum = 0
+    for data in dataset:
+        weight_sum += data["weight"]
+
+    for data in dataset:
+        data["weight"] = data["weight"] / weight_sum
+
+
+def train_adaboost_model(train_data):
+    dataset = []
+    for row in train_data:
+        dataset.append(extract_adaboost_train_data(row, 1.0 / len(train_data)))
+
+    hypotheses = get_hypotheses(dataset)
+
+    model = []
+    for h in hypotheses:
+        (i, j, label, _) = h
+
+        error = 0
+        # calculate the error of incorrect classify
+        for data in dataset:
+            if data["data"][i] > data["data"][j] and data["label"] != label:
+                error += data["weight"]
+
+        # adjust the weight of data which we predict correctly
+        for data in dataset:
+            if data["data"][i] > data["data"][j] and data["label"] == label:
+                data["weight"] = data["weight"] * error / (1 - error)
+
+        # normalize weight
+        normalize_weight(dataset)
+
+        h_weight = math.log((1 - error) / error)
+        model.append((i, j, label, h_weight))
+
+    # the model should be something like
+    # [(i, j, predction, weight) ... ]
     return model
 
 
 def adaboost_classify(model_adaboost, test_data):
     pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
-    for i in range(192):
-        for j in range(192):
-            if i != j and test_data["data"][i] > test_data["data"][j]:
-                pred_ret[model_adaboost[(i, j)]] += 1
+
+    for hypothesis in model_adaboost:
+        (i, j, label, weight) = hypothesis
+        if i != j and test_data["data"][i] > test_data["data"][j]:
+            pred_ret[label] += weight
 
     return max(pred_ret, key=pred_ret.get)
 
@@ -334,11 +399,11 @@ def test(test_file, model_file, model):
 #
 # Test adaboost
 
-# train("/Users/cyli/code/cli3-a4/train-data-s.txt",
-#       "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
+train("/Users/cyli/code/cli3-a4/train-data-s.txt",
+      "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
 
-# test("/Users/cyli/code/cli3-a4/test-data-s.txt",
-#      "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
+test("/Users/cyli/code/cli3-a4/test-data-s.txt",
+     "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
 
 #
 #
