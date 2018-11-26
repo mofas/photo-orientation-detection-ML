@@ -159,7 +159,7 @@ def train_adaboost_model(train_data):
         model.append((i, j, label, h_weight))
 
     # the model should be something like
-    # [(i, j, predction, weight) ... ]
+    # [(i, j, label, weight) ... ]
     return model
 
 
@@ -379,18 +379,32 @@ def test(test_file, model_file, model):
                  forest_classify(model_forest, data)])
 
     # for testing
+    print(model)
     for row in result:
         print(" ".join(row))
     # export results to file
     # export_result_to_file(result)
-
     return
 
+
+# TODO interface!!
+# task_type = sys.argv[1]
+
+# if task_type == "train":
+#     train(sys.argv[2], sys.argv[3], sys.argv[4])
+# elif task_type == "test":
+#     test(sys.argv[2], sys.argv[3], sys.argv[4])
+
+## Test script
+##
+##
+##
 
 #
 # Test nearest
 # train("/Users/cyli/code/cli3-a4/train-data-s.txt",
 #       "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
+
 # test("/Users/cyli/code/cli3-a4/test-data-s.txt",
 #      "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
 
@@ -399,11 +413,11 @@ def test(test_file, model_file, model):
 #
 # Test adaboost
 
-train("/Users/cyli/code/cli3-a4/train-data-s.txt",
-      "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
+# train("/Users/cyli/code/cli3-a4/train-data-s.txt",
+#       "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
 
-test("/Users/cyli/code/cli3-a4/test-data-s.txt",
-     "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
+# test("/Users/cyli/code/cli3-a4/test-data-s.txt",
+#      "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
 
 #
 #
@@ -416,9 +430,13 @@ test("/Users/cyli/code/cli3-a4/test-data-s.txt",
 # test("/Users/cyli/code/cli3-a4/test-data-s.txt",
 #      "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
 
-# task_type = sys.argv[1]
+#
 
-# if task_type == "train":
-#     train(sys.argv[2], sys.argv[3], sys.argv[4])
-# elif task_type == "test":
-#     test(sys.argv[2], sys.argv[3], sys.argv[4])
+# train("/Users/cyli/code/cli3-a4/train-data.txt",
+#       "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
+
+# train("/Users/cyli/code/cli3-a4/train-data.txt",
+#       "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
+
+train("/Users/cyli/code/cli3-a4/train-data.txt",
+      "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")

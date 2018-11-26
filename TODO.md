@@ -1,5 +1,5 @@
 # read args from argv
 
-# split data and collect trees
+# train model based on the real input
 
 best_model.txt.
