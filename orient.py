@@ -145,7 +145,7 @@ def get_split_by_idx_entropy(dataset, idx):
     # perfect two side split
     if gt_n == 0 and lt_n == 0:
         entropy = 0
-    # perfrce one side split
+    # perfect one side split
     elif gt_n == 0:
         entropy = (data_in_lt * 1.0 / total) * -lt_n * math.log(lt_n)
     elif lt_n == 0:
@@ -213,13 +213,33 @@ def build_tree(dataset, choosed_idx):
         return best_label
 
 
+def tree_classify(tree, data):
+    if isinstance(tree, basestring):
+        return tree
+    if data["data"][tree["idx"]] > THRESHOLD:
+        return tree_classify(tree["gt"], data)
+    else:
+        return tree_classify(tree["lt"], data)
+
+
 def build_forest(train_data):
     dataset = []
     for row in train_data:
         dataset.append(general_extract_image_data(row))
-    # TODO  splite data and create several tree
+
     tree = build_tree(dataset, [])
-    print("this is tree", tree)
+
+    # classify
+    # for row in dataset:
+    #     print(row["label"], tree_classify(tree, row))
+
+def forest_classify(forest, data):
+    pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
+    for tree in forest
+        for row in dataset:
+            pred_ret[tree_classify(tree, row)] += 1
+
+    return max(pred_ret, key=pred_ret.get)
 
 
 def train(input_file, output_file, model):
