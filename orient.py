@@ -336,11 +336,15 @@ def export_result_to_file(result):
 
 
 def test(test_file, model_file, model):
+    raw_data = []
     test_data = []
     result = []
 
     with open(test_file, 'r') as file:
-        test_data = file.readlines()
+        raw_data = file.readlines()
+
+    for row in raw_data:
+        test_data.append(general_extract_image_data(row))
 
     if model == 'nearest':
         with open(model_file, 'r') as file:
@@ -351,10 +355,9 @@ def test(test_file, model_file, model):
             model_nearest.append(extract_nearest_model_data(row))
 
         for row in test_data:
-            data = general_extract_image_data(row)
             result.append(
-                [data["filename"],
-                 nearest_classify(model_nearest, data)])
+                [row["filename"],
+                 nearest_classify(model_nearest, row)])
 
     elif model == 'adaboost':
         model_adaboost = {}
@@ -362,10 +365,9 @@ def test(test_file, model_file, model):
             model_adaboost = pickle.load(file)
 
         for row in test_data:
-            data = general_extract_image_data(row)
             result.append(
-                [data["filename"],
-                 adaboost_classify(model_adaboost, data)])
+                [row["filename"],
+                 adaboost_classify(model_adaboost, row)])
 
     elif model == 'forest':
         model_forest = {}
@@ -373,15 +375,25 @@ def test(test_file, model_file, model):
             model_forest = pickle.load(file)
 
         for row in test_data:
-            data = general_extract_image_data(row)
             result.append(
-                [data["filename"],
-                 forest_classify(model_forest, data)])
+                [row["filename"],
+                 forest_classify(model_forest, row)])
 
     # for testing
     print(model)
-    for row in result:
-        print(" ".join(row))
+    # Evaluate performance
+    data_len = len(test_data)
+
+    correct = 0
+    for i in range(data_len):
+        if test_data[i]["label"] == result[i][1]:
+            correct += 1
+
+    print("Accuracy", 1.0 * correct / data_len)
+
+    # for row in result:
+    #     print(" ".join(row))
+    #
     # export results to file
     # export_result_to_file(result)
     return
@@ -431,6 +443,10 @@ def test(test_file, model_file, model):
 #      "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
 
 #
+#
+#
+#
+# # Full data training model
 
 # train("/Users/cyli/code/cli3-a4/train-data.txt",
 #       "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
@@ -438,5 +454,18 @@ def test(test_file, model_file, model):
 # train("/Users/cyli/code/cli3-a4/train-data.txt",
 #       "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
 
-train("/Users/cyli/code/cli3-a4/train-data.txt",
-      "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
+# train("/Users/cyli/code/cli3-a4/train-data.txt",
+#       "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
+
+#
+#
+#
+#
+# # Test result
+
+test("/Users/cyli/code/cli3-a4/test-data.txt",
+     "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
+test("/Users/cyli/code/cli3-a4/test-data.txt",
+     "/Users/cyli/code/cli3-a4/adaboost_model.txt", "adaboost")
+test("/Users/cyli/code/cli3-a4/test-data.txt",
+     "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
