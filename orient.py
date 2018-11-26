@@ -34,7 +34,6 @@ def get_label_dist(dataset):
 
 # img_data1 = extract_image_data(img1)
 # img_data2 = extract_image_data(img2)
-model_forest = []
 model_best = []
 
 #### Hyperparameter
@@ -45,10 +44,7 @@ NUM_OF_TREE = 20
 THRESHOLD = 127
 
 # Avoid overfitting
-# Using in build decision tree,
-# IF data in the set is fewer than cut_off
-# We just return the max possibility
-LEAVE_CUT_OFF = 1
+MAX_TREE_DEPTH = 8
 
 # How many time we try to sample idx to split the data
 SPLIT_SAMPLING = 5
@@ -173,10 +169,10 @@ def build_tree(dataset, choosed_idx):
     data_len = len(dataset)
     (best_label, label_dist) = get_label_dist(dataset)
 
-    # if remaining data is smaller than cut off freq, we stop
+    # if tree is too depth, then we stop
     # if all data has same label, we also stop
     # return best_label
-    if len(dataset) > LEAVE_CUT_OFF and label_dist[best_label] != data_len:
+    if len(choosed_idx) < MAX_TREE_DEPTH and label_dist[best_label] != data_len:
 
         # random choose a idx which is not choosen before
         try_idx = choosed_idx[:]
@@ -227,17 +223,22 @@ def build_forest(train_data):
     for row in train_data:
         dataset.append(general_extract_image_data(row))
 
-    tree = build_tree(dataset, [])
+    forest = []
 
-    # classify
-    # for row in dataset:
-    #     print(row["label"], tree_classify(tree, row))
+    # split dataset
+    data_per_tree = len(dataset) / NUM_OF_TREE
+
+    for i in range(NUM_OF_TREE):
+        forest.append(
+            build_tree(dataset[i * data_per_tree:(i + 1) * data_per_tree], []))
+
+    return forest
+
 
 def forest_classify(forest, data):
     pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
-    for tree in forest
-        for row in dataset:
-            pred_ret[tree_classify(tree, row)] += 1
+    for tree in forest:
+        pred_ret[tree_classify(tree, data)] += 1
 
     return max(pred_ret, key=pred_ret.get)
 
@@ -256,8 +257,9 @@ def train(input_file, output_file, model):
         with open(output_file, 'w') as file:
             pickle.dump(model_adaboost, file)
     elif model == 'forest':
-        # TODO forest
-        build_forest(train_data)
+        model_forest = build_forest(train_data)
+        with open(output_file, 'w') as file:
+            pickle.dump(model_forest, file)
     return
 
 
@@ -299,6 +301,17 @@ def test(test_file, model_file, model):
                 [data["filename"],
                  adaboost_classify(model_adaboost, data)])
 
+    elif model == 'forest':
+        model_forest = {}
+        with open(model_file, 'r') as file:
+            model_forest = pickle.load(file)
+
+        for row in test_data:
+            data = general_extract_image_data(row)
+            result.append(
+                [data["filename"],
+                 forest_classify(model_forest, data)])
+
     # for testing
     for row in result:
         print(" ".join(row))
@@ -331,8 +344,11 @@ def test(test_file, model_file, model):
 #
 # Test forest
 
-train("/Users/cyli/code/cli3-a4/test-data-s.txt",
-      "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
+# train("/Users/cyli/code/cli3-a4/train-data-s.txt",
+#       "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
+
+test("/Users/cyli/code/cli3-a4/test-data-s.txt",
+     "/Users/cyli/code/cli3-a4/forest_model.txt", "forest")
 
 # task_type = sys.argv[1]
 
