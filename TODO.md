@@ -2,7 +2,7 @@
 
 Test data
 nearest: 0.6260416666666667
-adaboost: 0.575
+adaboost: 0.6927
 forest: 0.7083
 
 adaboost:
