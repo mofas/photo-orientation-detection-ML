@@ -51,7 +51,7 @@ model_best = []
 NEAREST_K = 50
 
 ### For adaboost
-NUM_ADABOOST_CLASSIFIER = 500
+NUM_ADABOOST_CLASSIFIER = 21
 
 ### For forest
 # the number of tree in forest
@@ -62,7 +62,7 @@ THRESHOLD = 180
 MAX_TREE_DEPTH = 16
 
 # How many time we try to sample idx to split the data
-SPLIT_SAMPLING = 10
+SPLIT_SAMPLING = 20
 
 
 def vector_diff(img_data1, img_data2):
@@ -108,15 +108,20 @@ def get_hypotheses(dataset):
                         freq_map[row["label"]] += 1
                 # print(freq_map)
                 best_label = max(freq_map, key=freq_map.get)
-                heapq.heappush(cands_map[best_label],
-                               (-freq_map[best_label], i, j, best_label,
-                                freq_map[best_label]))
+                heapq.heappush(cands_map[best_label], (
+                    freq_map[best_label],
+                    i,
+                    j,
+                    best_label,
+                ))
+                if len(cands_map[best_label]) > NUM_ADABOOST_CLASSIFIER / 4:
+                    heapq.heappop(cands_map[best_label])
 
     hypotheses = []
     # get the best classifier from cands
     for i in range(NUM_ADABOOST_CLASSIFIER / 4):
         for label_type in cands_map:
-            (score, i, j, label, freq) = heapq.heappop(cands_map[label_type])
+            (freq, i, j, label) = heapq.heappop(cands_map[label_type])
             hypotheses.append((i, j, label, freq))
     return hypotheses
 
