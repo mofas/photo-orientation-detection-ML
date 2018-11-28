@@ -1,3 +1,19 @@
+# Write report
+
+### nearest k
+
+###
+
+###
+
+### Running time / Accuracy Table
+
+### Which classifiers and which parameters would you recommend to a potential client?
+
+### How does performance vary depending on the training dataset size,
+
+### Show a few sample images that were classified correctly and incorrectly.
+
 # read args from argv
 
 Test data

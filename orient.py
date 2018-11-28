@@ -5,13 +5,49 @@ import pickle
 import random
 import numpy as np
 
-#### Hyperparameter
+#### Report
+# Nearest model:
+# Nearest model is very simple, we just look through all the images,
+# and I use "vector_diff" function to find the accumulated square vector difference between
+# two images in all 192 pxiels. The only parameter we need to decide is how many "closest"
+# images (NEAREST_K) to choose to vote the final result.
+# I try K = 5, K = 10, k = 20, and k = 50
+# K = 5 : 0.5979
+# K = 10 :
+# K = 20 :
+# K = 50: 0.6260
+#
+# However, the performance of nearest model decrease significantly if we don't have enough
+# data. For example, if we only have 1000 data, the accuracy is lower than 0,3.
+#
+# Another drawback of nearest model is it's classify time take too long,
+# because we actually compared the test image to all the training data.
+# #
+# Adaboost model:
+# In adaboost model, I iterate all the possible weak classifier candidates (192*192)
+# and choose the best n classifier (NUM_ADABOOST_CLASSIFIER) to form the
+# final adaboost classifier. In addition, I find the lots of candidates are very
+# good at label "0" images. While only few candidates
+#
+#
+# The folowing table is running on 39992 training data, and 960 testing data
+#
+# Model          Accuracy        Training Time        Classify Time
+# Nearest K      0.62            1s                   >1000s
+# Adaboost       0.6927          400s                 10s
+# Forest         0.7083          100s                 10s
+# Best
+#
+# #
+#### End Report
+
+#### Model Parameter
 
 ### For nearest k
-NEAREST_K = 50
+NEAREST_K = 10
 
 ### For adaboost
-NUM_ADABOOST_CLASSIFIER = 21
+NUM_ADABOOST_CLASSIFIER = 20
 
 ### For forest
 # the number of tree in forest
@@ -414,8 +450,8 @@ def test(test_file, model_file, model):
 # train("/Users/cyli/code/cli3-a4/train-data-s.txt",
 #       "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
 
-# test("/Users/cyli/code/cli3-a4/test-data-s.txt",
-#      "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
+test("/Users/cyli/code/cli3-a4/test-data.txt",
+     "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
 
 #
 #
