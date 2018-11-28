@@ -89,10 +89,10 @@ import numpy as np
 # data, then tree is underfitting. Similarity, growing too many trees or too few
 # trees will decrease performance.
 #
-# I try the several parameter, and I find the optimal tree depth is around 12 ~ 18,
+# I try the several parameter, and I find the optimal tree depth is around 14 ~ 18,
 # and the optimal tree number is around 300 ~ 600. The optimal threshold for
 # splitting data is around 150 ~ 200.  The number of sampling splited index is
-# around 20.
+# around 60.
 #
 #
 #
@@ -102,7 +102,7 @@ import numpy as np
 # Model          Accuracy        Training Time        Classify Time
 # Nearest K      0.6333          1s                   >1000s
 # Adaboost       0.6927          400s                 0.1s
-# Forest         0.7385          20s                  1s
+# Forest         0.7479          20s                  1s
 # Best
 #
 # #
@@ -119,13 +119,14 @@ NUM_ADABOOST_CLASSIFIER = 16
 ### For forest
 # the number of tree in forest
 NUM_OF_TREE = 400
+DATA_PER_TREE = 200
 THRESHOLD = 180
 
 # Avoid overfitting
-MAX_TREE_DEPTH = 14
+MAX_TREE_DEPTH = 15
 
 # How many time we try to sample idx to split the data
-SPLIT_SAMPLING = 60
+SPLIT_SAMPLING = 80
 
 
 # General function
@@ -392,11 +393,15 @@ def train_forest_model(train_data):
     forest = []
 
     # split dataset
-    data_per_tree = len(dataset) / NUM_OF_TREE
+    data_interval_per_tree = len(dataset) / NUM_OF_TREE
 
     for i in range(NUM_OF_TREE):
-        forest.append(
-            build_tree(dataset[i * data_per_tree:(i + 1) * data_per_tree], []))
+        tree_data = dataset[i * data_interval_per_tree:
+                            i * data_interval_per_tree + DATA_PER_TREE]
+        if i * data_interval_per_tree + DATA_PER_TREE > len(dataset):
+            tree_data = tree_data + dataset[0:(
+                i * data_interval_per_tree + DATA_PER_TREE) % len(dataset)]
+        forest.append(build_tree(tree_data, []))
 
     return forest
 
