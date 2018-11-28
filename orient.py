@@ -1,3 +1,4 @@
+#!/usr/local/bin/python2
 import sys
 import heapq
 import math
@@ -12,30 +13,96 @@ import numpy as np
 # two images in all 192 pxiels. The only parameter we need to decide is how many "closest"
 # images (NEAREST_K) to choose to vote the final result.
 # I try K = 5, K = 10, k = 20, and k = 50
-# K = 5 : 0.5979
-# K = 10 :
-# K = 20 :
-# K = 50: 0.6260
+# K = 5  : 0.5979
+# K = 10 : 0.6177
+# K = 50 : 0.6260
+# K = 100: 0.6333
 #
 # However, the performance of nearest model decrease significantly if we don't have enough
-# data. For example, if we only have 1000 data, the accuracy is lower than 0,3.
+# data. For example, if we only have 1000 training image, the accuracy is lower than 0.3,
+# which is pretty close random guess.
 #
 # Another drawback of nearest model is it's classify time take too long,
 # because we actually compared the test image to all the training data.
+#
+# In short, nearest k model performace well when you have lots of data. However,
+# the extremely long classify time make this algorithm impractical.
+#
+#
 # #
 # Adaboost model:
 # In adaboost model, I iterate all the possible weak classifier candidates (192*192)
 # and choose the best n classifier (NUM_ADABOOST_CLASSIFIER) to form the
 # final adaboost classifier. In addition, I find the lots of candidates are very
-# good at label "0" images. While only few candidates
+# good at label "0" images. While only few candidates can do good jobs at label "270".
+#
+# Therefore, I choose the best NUM_ADABOOST_CLASSIFIER/4 candidates for all orientations.
+# I belive through this mechanism, I can find the "experts" for all orientations.
+#
+# The following is the accuracy for differnt NUM_ADABOOST_CLASSIFIER.
+#
+# NUM_ADABOOST_CLASSIFIER = 2   : 0.2646
+# NUM_ADABOOST_CLASSIFIER = 5   : 0.659375
+# NUM_ADABOOST_CLASSIFIER = 10  : 0.678125
+# NUM_ADABOOST_CLASSIFIER = 16  : 0.6927
+# NUM_ADABOOST_CLASSIFIER = 20  : 0.6927
+# NUM_ADABOOST_CLASSIFIER = 28  : 0.6271
+# NUM_ADABOOST_CLASSIFIER = 50  : 0.553125
+# NUM_ADABOOST_CLASSIFIER = 500 : 0.575
+#
+# You can see here that increase the number of weak classifiers will not increase
+# the performance, even decrease it.
+# I think I can explain that if there are too many too weak classifiers can vote,
+# then it will create lots of noise and decrease the performance.
+#
+# The classify time of adaboost is blazing fast, because we just summary the
+# result of all classifiers.
+#
+# Another benefit of adaboost is it works quite well even we don't have lots of data.
+# For 1000 data, the performance of adaboost can over 0.4, which is pretty good
+# compared with the nearest K.
+#
+# However, the training time of adaboost is a drawback, for training around 40k
+# data, it will take around 400 sec in my computer to train, which is much slower
+# than forest model.
+#
+# #
+# Forest model:
+# Forest model is quite complex to implmenet because lots of decisions to make
+# and parameters to tune.
+# In my implementation, I use the value of a pixel as features to split dataset.
+# If the value of certain pixel higher than parameter THRESHOLD, then
+# we put them into left subtree, otherwise, in right subtree.
+#
+# In addition, when we split the data, which index to use is also important.
+# In theory, we can try all 192 index and choose the one giving us the lowest entropy.
+# However, I find if I random choose some good indexes but not the best.
+# I will get the better performance in the end!
+#
+# This is a amazing result. Therefore, I have an parameter called "SPLIT_SAMPLING"
+# to decide how many samplings we did for finding a good index.
+# #
+# Other parameter is how many tree we should have and how depth each tree will be.
+# It is very hard to tune. Neverthelee, both of them should depend on how many
+# train data you have. From my personal experience, if we give a tree too many data,
+# then it will grow very high(deep), which caused the overfitting. If we give too few
+# data, then tree is underfitting. Similarity, growing too many trees or too few
+# trees will decrease performance.
+#
+# I try the several parameter, and I find the optimal tree depth is around 12 ~ 18,
+# and the optimal tree number is around 300 ~ 600. The optimal threshold for
+# splitting data is around 150 ~ 200.  The number of sampling splited index is
+# around 20.
 #
 #
+#
+# #
 # The folowing table is running on 39992 training data, and 960 testing data
-#
+# after all parameter tuning.
 # Model          Accuracy        Training Time        Classify Time
-# Nearest K      0.62            1s                   >1000s
-# Adaboost       0.6927          400s                 10s
-# Forest         0.7083          100s                 10s
+# Nearest K      0.6333          1s                   >1000s
+# Adaboost       0.6927          400s                 0.1s
+# Forest         0.7385          20s                  1s
 # Best
 #
 # #
@@ -44,10 +111,10 @@ import numpy as np
 #### Model Parameter
 
 ### For nearest k
-NEAREST_K = 10
+NEAREST_K = 100
 
 ### For adaboost
-NUM_ADABOOST_CLASSIFIER = 20
+NUM_ADABOOST_CLASSIFIER = 16
 
 ### For forest
 # the number of tree in forest
@@ -55,10 +122,10 @@ NUM_OF_TREE = 400
 THRESHOLD = 180
 
 # Avoid overfitting
-MAX_TREE_DEPTH = 16
+MAX_TREE_DEPTH = 14
 
 # How many time we try to sample idx to split the data
-SPLIT_SAMPLING = 20
+SPLIT_SAMPLING = 60
 
 
 # General function
@@ -279,7 +346,7 @@ def build_tree(dataset, choosed_idx):
         # the best result we find yet
         best_result = (2, 0, '0', '0')
 
-        # randomly sampling try to get a good split
+        # randomly sampling to get a good split
         for i in range(SPLIT_SAMPLING):
             idx = random.randint(0, 192)
             if len(try_idx) < 192:
@@ -413,7 +480,7 @@ def test(test_file, model_file, model):
                  forest_classify(model_forest, row)])
 
     # for testing
-    print(model)
+    # print(model)
     # Evaluate performance
     data_len = len(test_data)
 
@@ -428,17 +495,16 @@ def test(test_file, model_file, model):
     #     print(" ".join(row))
     #
     # export results to file
-    # export_result_to_file(result)
+    export_result_to_file(result)
     return
 
 
-# TODO interface!!
-# task_type = sys.argv[1]
+task_type = sys.argv[1]
 
-# if task_type == "train":
-#     train(sys.argv[2], sys.argv[3], sys.argv[4])
-# elif task_type == "test":
-#     test(sys.argv[2], sys.argv[3], sys.argv[4])
+if task_type == "train":
+    train(sys.argv[2], sys.argv[3], sys.argv[4])
+elif task_type == "test":
+    test(sys.argv[2], sys.argv[3], sys.argv[4])
 
 ## Test script
 ##
@@ -450,8 +516,8 @@ def test(test_file, model_file, model):
 # train("/Users/cyli/code/cli3-a4/train-data-s.txt",
 #       "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
 
-test("/Users/cyli/code/cli3-a4/test-data.txt",
-     "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
+# test("/Users/cyli/code/cli3-a4/test-data.txt",
+#      "/Users/cyli/code/cli3-a4/nearest_model.txt", "nearest")
 
 #
 #
