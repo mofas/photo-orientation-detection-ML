@@ -127,12 +127,23 @@ import numpy as np
 # Forest         0.7479          20s                  1s
 # Best
 #
-# Sample image classified correctly and incorrectly
+# Sampling: test image easily misclassified.
+# 10196604813.jpg
+# 12178947064.jpg
+# 14965011945.jpg
+# 16505359657.jpg
+# 17010973417.jpg
+# 19391450526.jpg
+# 3926127759.jpg
+# 4813244147.jpg
+# 9151723839.jpg
+# 9356896753.jpg
 #
-#
-#
-#
-#
+# For those misclassified, some of them are too dark (19391450526.jpg);
+# some of them are lack of color contrast (2091717624.jpg);
+# some of them are hard to distinguish even for human (16505359657.jpg).
+# However, most misclassified images share no common pattern at all,
+# so I think using color as features may not easily for human to reason about.
 # #
 #### End Report
 
@@ -521,6 +532,8 @@ def test(test_file, model_file, model):
     for i in range(data_len):
         if test_data[i]["label"] == result[i][1]:
             correct += 1
+        # else:
+        #     print('Incorrect', test_data[i]["filename"])
 
     print("Accuracy", 1.0 * correct / data_len)
 

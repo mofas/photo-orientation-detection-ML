@@ -16,8 +16,4 @@ time ./orient.py test test-data.txt forest_model.txt forest
 
 # Write report
 
-### Which classifiers and which parameters would you recommend to a potential client?
-
-### Show a few sample images that were classified correctly and incorrectly.
-
 best_model.txt.
