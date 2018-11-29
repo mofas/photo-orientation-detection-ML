@@ -122,7 +122,7 @@ import numpy as np
 # The folowing table is running on 39992 training data, and 960 testing data
 # after all parameter tuning.
 # Model          Accuracy        Training Time        Classify Time
-# Nearest K      0.6333          1s                   >1000s
+# Nearest K      0.7167          1s                   >1000s
 # Adaboost       0.6938          400s                 0.1s
 # Forest         0.7479          20s                  1s
 # Best(Forest)   0.7479          20s                  1s
