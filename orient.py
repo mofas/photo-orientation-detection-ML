@@ -123,7 +123,7 @@ import numpy as np
 # after all parameter tuning.
 # Model          Accuracy        Training Time        Classify Time
 # Nearest K      0.6333          1s                   >1000s
-# Adaboost       0.6927          400s                 0.1s
+# Adaboost       0.6938          400s                 0.1s
 # Forest         0.7479          20s                  1s
 # Best(Forest)   0.7479          20s                  1s
 #
@@ -388,10 +388,10 @@ def build_tree(dataset, choosed_idx):
 
         # randomly sampling to get a good split
         for i in range(SPLIT_SAMPLING):
-            idx = random.randint(0, 192)
+            idx = random.randint(0, 191)
             if len(try_idx) < 192:
                 while idx in try_idx:
-                    idx = random.randint(0, 192)
+                    idx = random.randint(0, 191)
             result = get_split_by_idx_entropy(dataset, idx)
 
             if result[0] < best_result[0]:
