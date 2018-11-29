@@ -125,7 +125,7 @@ import numpy as np
 # Nearest K      0.6333          1s                   >1000s
 # Adaboost       0.6927          400s                 0.1s
 # Forest         0.7479          20s                  1s
-# Best
+# Best(Forest)   0.7479          20s                  1s
 #
 # Sampling: test image easily misclassified.
 # 10196604813.jpg
@@ -150,7 +150,7 @@ import numpy as np
 #### Model Parameter
 
 ### For nearest k
-NEAREST_K = 100
+NEAREST_K = 10
 
 ### For adaboost
 NUM_ADABOOST_CLASSIFIER = 16
@@ -174,7 +174,7 @@ def general_extract_image_data(img_info):
     return {
         'filename': data[0],
         'label': data[1],
-        'data': [int(x) for x in data[1:]]
+        'data': [int(x) for x in data[2:]]
     }
 
 
@@ -189,7 +189,7 @@ def extract_adaboost_train_data(img_info, initial_weight):
     return {
         'weight': initial_weight,
         'label': data[1],
-        'data': [int(x) for x in data[1:]]
+        'data': [int(x) for x in data[2:]]
     }
 
 
@@ -203,7 +203,8 @@ def get_label_dist(dataset):
 def vector_diff(img_data1, img_data2):
     diff = 0
     for i in range(192):
-        diff += (img_data1["data"][i] - img_data2["data"][i])**2
+        v_d = (img_data1["data"][i] - img_data2["data"][i])
+        diff += v_d * v_d
     return diff
 
 
@@ -212,15 +213,14 @@ def nearest_classify(model_nearest, test_data):
     # we need priority queue to keep the best K cand in the queue
 
     cands = []
-    pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
     for cand in model_nearest:
         diff = vector_diff(cand, test_data)
         heapq.heappush(cands, (-diff, cand["label"]))
         if len(cands) > NEAREST_K:
             removed = heapq.heappop(cands)
-            # print("removed", removed)
 
     # get the result
+    pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
     while len(cands):
         (score, pred) = heapq.heappop(cands)
         pred_ret[pred] += 1
