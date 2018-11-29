@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 import sys
 import heapq
 import math
@@ -158,7 +158,8 @@ NUM_ADABOOST_CLASSIFIER = 16
 ### For forest
 # the number of tree in forest
 NUM_OF_TREE = 400
-DATA_PER_TREE = 200
+DATA_PER_TREE = 100
+
 THRESHOLD = 180
 
 # Avoid overfitting
@@ -392,19 +393,23 @@ def build_tree(dataset, choosed_idx):
             if len(try_idx) < 192:
                 while idx in try_idx:
                     idx = random.randint(0, 191)
-            result = get_split_by_idx_entropy(dataset, idx)
 
-            if result[0] < best_result[0]:
-                best_result = result
-            # we have tried this idx
+                result = get_split_by_idx_entropy(dataset, idx)
+                if result[0] < best_result[0]:
+                    best_result = result
+                # we have tried this idx
             try_idx.append(idx)
 
         (entropy, best_idx, best_gt_label, best_lt_label) = best_result
 
         # append selected idx to set
+        new_choosed_idx = choosed_idx[:]
         choosed_idx.append(best_idx)
 
-        (lt_data, gt_data) = split_data_by_idx(dataset, best_idx)
+        (lt_data, gt_data) = split_data_by_idx(
+            dataset,
+            best_idx,
+        )
         return {
             "idx": best_idx,
             "lt": build_tree(lt_data, choosed_idx),
@@ -442,6 +447,7 @@ def train_forest_model(train_data):
                 i * data_interval_per_tree + DATA_PER_TREE) % len(dataset)]
         forest.append(build_tree(tree_data, []))
 
+    print(forest[0])
     return forest
 
 
