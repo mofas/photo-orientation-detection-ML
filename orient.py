@@ -94,28 +94,32 @@ import numpy as np
 # data, then the tree is underfitting. Similarity, growing too many trees or too few
 # trees will decrease performance.
 #
-# I try the several parameters, and I find the optimal tree depth is around 14 ~ 18,
-# and the optimal tree number is around 300 ~ 600. The optimal threshold for
-# splitting data is around 150 ~ 200. The number of data feeds to each tree is
-# around 200. (Well, the data "reuse rate" rate based on above parameter
-# is 2, which mean a data will be used by 2 trees).
-# The number of sampling split index is around 60.
+# I try the several parameters, and I find the optimal max tree depth is around 44
+# (depend on how many data you feed into the tree),
+# and the optimal tree number is around 500 ~ 800. The optimal threshold for
+# splitting data is around 130 ~ 170. The number of data feeds to each tree is
+# around 60. The number of sampling split index is around 50 ~ 100.
 #
-# The forest model has several advantages. First of all, high performance compared to
-# AdaBoost and nearest K algorithm. Secondly, relatively faster training time compared to
-# AdaBoost, which help developers to tune parameters easily. Thirdly, the classified time is
-# also very fast, in just several seconds. Fourth, forest model doing quite well even
-# we don't have lots of data. For 1000 data, the accuracy of forest model can over 0.7
-# if we tune the parameter properly. Compared with 0.3 of nearest K, and 0.45 of AdaBoost,
+# The forest model has several advantages. First of all, relatively faster training
+# time compared to AdaBoost, which help developers to tune parameters easily.
+# Second, the classified time is also very fast, in just several seconds.
+# Third, forest model doing quite well even we don't have lots of data.
+# For 1000 data, the accuracy of forest model can over 0.55 if we tune the
+# parameter properly. Compared with 0.3 of nearest K, and 0.4 of AdaBoost,
 # the performance is unbelievably good.
 #
-#
+# However, the main disadventage of the forest model is that we need to
+# tune the parameters by hand, which is a time consuming job. The worst of all,
+# the performance landscape is quite rough, there is no easy way to run
+# gradient descent algorithm to find the optimal value.
 #
 # #
 # Summary:
-# Overall, I will recommend the forest model to a potential client to use.
-# It is fast and easy to train. It also has the best performance among
-# these 3 models. Moreover, it performs well even we don't have lots of data.
+# Overall, I will recommend the Adaboost model to a potential client to use.
+# It is fast and easy to train. It also has the pretty good performance among
+# these 3 models. Moreover, it performs OK even we don't have lots of data.
+# Even it takes lots of time to train, it is still easy to train,
+# compared with Forest which I need to try different parameter combinations.
 #
 #
 # #
@@ -124,8 +128,8 @@ import numpy as np
 # Model          Accuracy        Training Time        Classify Time
 # Nearest K      0.7167          1s                   >1000s
 # Adaboost       0.6938          400s                 0.1s
-# Forest         0.7479          20s                  1s
-# Best(Forest)   0.7479          20s                  1s
+# Forest         0.6604          30s                  2s
+# Best(Adaboost) 0.6938          400s                 0.1s
 #
 # Sampling: test image easily misclassified.
 # 10196604813.jpg
@@ -157,16 +161,16 @@ NUM_ADABOOST_CLASSIFIER = 16
 
 ### For forest
 # the number of tree in forest
-NUM_OF_TREE = 400
-DATA_PER_TREE = 100
+NUM_OF_TREE = 700
+DATA_PER_TREE = 60
 
-THRESHOLD = 180
+THRESHOLD = 130
 
 # Avoid overfitting
-MAX_TREE_DEPTH = 15
+MAX_TREE_DEPTH = 44
 
 # How many time we try to sample idx to split the data
-SPLIT_SAMPLING = 80
+SPLIT_SAMPLING = 100
 
 
 # General function
@@ -447,7 +451,6 @@ def train_forest_model(train_data):
                 i * data_interval_per_tree + DATA_PER_TREE) % len(dataset)]
         forest.append(build_tree(tree_data, []))
 
-    print(forest[0])
     return forest
 
 
@@ -476,7 +479,10 @@ def train(input_file, output_file, model):
         model_forest = train_forest_model(train_data)
         with open(output_file, 'w') as file:
             pickle.dump(model_forest, file)
-    return
+    elif model == 'best':
+        model_best = train_adaboost_model(train_data)
+        with open(output_file, 'w') as file:
+            pickle.dump(model_best, file)
 
 
 def export_result_to_file(result):
@@ -528,6 +534,16 @@ def test(test_file, model_file, model):
             result.append(
                 [row["filename"],
                  forest_classify(model_forest, row)])
+
+    elif model == 'best':
+        model_best = {}
+        with open(model_file, 'r') as file:
+            model_best = pickle.load(file)
+
+        for row in test_data:
+            result.append(
+                [row["filename"],
+                 adaboost_classify(model_best, row)])
 
     # for testing
     # print(model)

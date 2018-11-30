@@ -6,6 +6,7 @@ train
 time ./orient.py train train-data.txt nearest_model.txt nearest
 time ./orient.py train train-data.txt adaboost_model.txt adaboost
 time ./orient.py train train-data.txt forest_model.txt forest
+time ./orient.py train train-data.txt best_model.txt best
 ```
 
 test
@@ -14,12 +15,11 @@ test
 time ./orient.py test test-data.txt nearest_model.txt nearest
 time ./orient.py test test-data.txt adaboost_model.txt adaboost
 time ./orient.py test test-data.txt forest_model.txt forest
+time ./orient.py test test-data.txt best_model.txt best
 ```
 
 ```
-time ./orient.py test test-data.txt nearest_model.txt nearest
+./orient.py train train-data.txt forest_model.txt forest && ./orient.py test test-data.txt forest_model.txt forest
+```
 
 # Write report
-
-best_model.txt.
-```
