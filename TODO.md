@@ -9,6 +9,10 @@ time ./orient.py train train-data.txt forest_model.txt forest
 time ./orient.py train train-data.txt best_model.txt best
 ```
 
+```
+time ./orient.py train train-data-s.txt forest_model.txt forest
+```
+
 test
 
 ```
@@ -23,3 +27,15 @@ time ./orient.py test test-data.txt best_model.txt best
 ```
 
 # Write report
+
+300 / 150 / 20
+0.403125
+
+200 / 200 / 20
+0.425
+
+150 / 300/ 25
+0.4490
+
+100 / 400 / 30
+0.41458333333333336

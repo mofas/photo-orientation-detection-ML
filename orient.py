@@ -161,16 +161,14 @@ NUM_ADABOOST_CLASSIFIER = 16
 
 ### For forest
 # the number of tree in forest
-NUM_OF_TREE = 700
-DATA_PER_TREE = 60
-
-THRESHOLD = 130
+NUM_OF_TREE = 150
+DATA_PER_TREE = 300
 
 # Avoid overfitting
-MAX_TREE_DEPTH = 44
+MAX_TREE_DEPTH = 22
 
 # How many time we try to sample idx to split the data
-SPLIT_SAMPLING = 100
+SPLIT_SAMPLING = 60
 
 
 # General function
@@ -322,57 +320,73 @@ def adaboost_classify(model_adaboost, test_data):
 def get_split_by_idx_entropy(dataset, idx):
 
     total = len(dataset)
-    gt_pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
-    lt_pred_ret = {'0': 0, '90': 0, '180': 0, '270': 0}
+    pred_ret_1 = {'0': 0, '90': 0, '180': 0, '270': 0}
+    pred_ret_2 = {'0': 0, '90': 0, '180': 0, '270': 0}
+    pred_ret_3 = {'0': 0, '90': 0, '180': 0, '270': 0}
     for d in dataset:
-        if d["data"][idx] > THRESHOLD:
-            gt_pred_ret[d["label"]] += 1
+        if d["data"][idx] < 85:
+            pred_ret_1[d["label"]] += 1
+        elif d["data"][idx] > 170:
+            pred_ret_3[d["label"]] += 1
         else:
-            lt_pred_ret[d["label"]] += 1
-    best_gt_label = max(gt_pred_ret, key=gt_pred_ret.get)
-    best_lt_label = max(lt_pred_ret, key=lt_pred_ret.get)
-    data_in_gt = sum(gt_pred_ret.values())
-    data_in_lt = sum(lt_pred_ret.values())
+            pred_ret_2[d["label"]] += 1
+
+    best_label_1 = max(pred_ret_1, key=pred_ret_1.get)
+    best_label_2 = max(pred_ret_2, key=pred_ret_2.get)
+    best_label_3 = max(pred_ret_3, key=pred_ret_3.get)
+    data_in_1 = sum(pred_ret_1.values())
+    data_in_2 = sum(pred_ret_2.values())
+    data_in_3 = sum(pred_ret_2.values())
     # print("====")
-    # print(gt_pred_ret, best_gt_label)
-    # print(lt_pred_ret, best_lt_label)
+    # print(pred_ret_1, best_label_1)
+    # print(pred_ret_2, best_lt_label)
 
-    # This idx is not useful if we get both same label on both direction
-    if best_gt_label == best_lt_label:
-        return (1, idx, best_gt_label, best_lt_label)
+    # This idx is not useful if we get both same label on two side
+    if best_label_1 == best_label_2 or best_label_2 == best_label_3:
+        return (1, idx, best_label_1, best_label_2, best_label_3)
 
-    # This idx is not useful if all the data are in one side
-    if data_in_gt == 0 or data_in_lt == 0:
-        return (1, idx, best_gt_label, best_lt_label)
+    error_num_in_1 = 0
+    error_num_in_2 = 0
+    error_num_in_3 = 0
 
-    gt_n = (data_in_gt - gt_pred_ret[best_gt_label]) * 1.0 / data_in_gt
-    lt_n = (data_in_lt - lt_pred_ret[best_lt_label]) * 1.0 / data_in_lt
+    if data_in_1 > 0:
+        error_num_in_1 = (
+            data_in_1 - pred_ret_1[best_label_1]) * 1.0 / data_in_1
+    if data_in_2 > 0:
+        error_num_in_2 = (
+            data_in_2 - pred_ret_2[best_label_2]) * 1.0 / data_in_2
+    if data_in_3 > 0:
+        error_num_in_3 = (
+            data_in_3 - pred_ret_3[best_label_3]) * 1.0 / data_in_3
 
-    # perfect two side split
-    if gt_n == 0 and lt_n == 0:
-        entropy = 0
-    # perfect one side split
-    elif gt_n == 0:
-        entropy = (data_in_lt * 1.0 / total) * -lt_n * math.log(lt_n)
-    elif lt_n == 0:
-        entropy = (data_in_gt * 1.0 / total) * -lt_n * math.log(gt_n)
-    else:
-        entropy = (data_in_gt * 1.0 / total) * -gt_n * math.log(gt_n) + (
-            data_in_lt * 1.0 / total) * -lt_n * math.log(lt_n)
-    return (entropy, idx, best_gt_label, best_lt_label)
+    entropy = 0
+    if error_num_in_1 > 0:
+        entropy += (data_in_1 * 1.0 /
+                    total) * -error_num_in_1 * math.log(error_num_in_1)
+    if error_num_in_2 > 0:
+        entropy += (data_in_1 * 1.0 /
+                    total) * -error_num_in_2 * math.log(error_num_in_2)
+    if error_num_in_3 > 0:
+        entropy += (data_in_1 * 1.0 /
+                    total) * -error_num_in_3 * math.log(error_num_in_3)
+
+    return (entropy, idx, best_label_1, best_label_2, best_label_3)
 
 
 def split_data_by_idx(dataset, idx):
-    gt_data = []
-    lt_data = []
+    data_in_1 = []
+    data_in_2 = []
+    data_in_3 = []
 
     for d in dataset:
-        if d["data"][idx] > THRESHOLD:
-            gt_data.append(d)
+        if d["data"][idx] < 85:
+            data_in_1.append(d)
+        elif d["data"][idx] > 170:
+            data_in_3.append(d)
         else:
-            lt_data.append(d)
+            data_in_2.append(d)
 
-    return (lt_data, gt_data)
+    return (data_in_1, data_in_2, data_in_3)
 
 
 def build_tree(dataset, choosed_idx):
@@ -404,20 +418,22 @@ def build_tree(dataset, choosed_idx):
                 # we have tried this idx
             try_idx.append(idx)
 
-        (entropy, best_idx, best_gt_label, best_lt_label) = best_result
+        (entropy, best_idx, best_label_1, best_label_2,
+         best_label_3) = best_result
 
         # append selected idx to set
         new_choosed_idx = choosed_idx[:]
         choosed_idx.append(best_idx)
 
-        (lt_data, gt_data) = split_data_by_idx(
+        (data_in_1, data_in_2, data_in_3) = split_data_by_idx(
             dataset,
             best_idx,
         )
         return {
             "idx": best_idx,
-            "lt": build_tree(lt_data, choosed_idx),
-            "gt": build_tree(gt_data, choosed_idx),
+            "data_1": build_tree(data_in_1, choosed_idx),
+            "data_2": build_tree(data_in_2, choosed_idx),
+            "data_3": build_tree(data_in_3, choosed_idx),
         }
     else:
         # we return the prediction based on the most freq label
@@ -427,10 +443,12 @@ def build_tree(dataset, choosed_idx):
 def tree_classify(tree, data):
     if isinstance(tree, basestring):
         return tree
-    if data["data"][tree["idx"]] > THRESHOLD:
-        return tree_classify(tree["gt"], data)
+    if data["data"][tree["idx"]] < 85:
+        return tree_classify(tree["data_1"], data)
+    elif data["data"][tree["idx"]] > 170:
+        return tree_classify(tree["data_3"], data)
     else:
-        return tree_classify(tree["lt"], data)
+        return tree_classify(tree["data_2"], data)
 
 
 def train_forest_model(train_data):
