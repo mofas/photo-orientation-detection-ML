@@ -21,5 +21,3 @@ time ./orient.py test test-data.txt best_model.txt best
 ```
 ./orient.py train train-data.txt forest_model.txt forest && ./orient.py test test-data.txt forest_model.txt forest
 ```
-
-# Write report
