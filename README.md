@@ -7,10 +7,13 @@ and I use "vector_diff" function to find the accumulated square vector differenc
 two images in all 192 pixels. The only parameter we need to decide is how many "closest"
 images (NEAREST_K) to choose to vote for the final result.
 I try K = 5, K = 10, k = 20, and k = 50
+
+```
 K = 5 : 0.5979
 K = 10 : 0.6177
 K = 50 : 0.6260
 K = 100: 0.6333
+```
 
 However, the performance of the nearest model decrease significantly if we don't have enough
 data. For example, if we only have 1000 training image, the accuracy is lower than 0.3,
@@ -34,6 +37,7 @@ I believe through this mechanism, I can find the "experts" for all orientations.
 
 The following is the accuracy for different NUM_ADABOOST_CLASSIFIER.
 
+```
 NUM_ADABOOST_CLASSIFIER = 2 : 0.2646
 NUM_ADABOOST_CLASSIFIER = 5 : 0.659375
 NUM_ADABOOST_CLASSIFIER = 10 : 0.678125
@@ -42,6 +46,7 @@ NUM_ADABOOST_CLASSIFIER = 20 : 0.6927
 NUM_ADABOOST_CLASSIFIER = 28 : 0.6271
 NUM_ADABOOST_CLASSIFIER = 50 : 0.553125
 NUM_ADABOOST_CLASSIFIER = 500 : 0.575
+```
 
 You can see here that increase the number of weak classifiers will not increase
 the performance, even decrease it.
@@ -125,6 +130,7 @@ Best(Adaboost) 0.6938 400s 0.1s
 
 # Sampling: test image easily misclassified.
 
+```
 10196604813.jpg
 12178947064.jpg
 14965011945.jpg
@@ -135,6 +141,7 @@ Best(Adaboost) 0.6938 400s 0.1s
 4813244147.jpg
 9151723839.jpg
 9356896753.jpg
+```
 
 For those misclassified, some of them are too dark (19391450526.jpg);
 some of them are lack of color contrast (2091717624.jpg);
