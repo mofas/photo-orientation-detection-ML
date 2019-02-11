@@ -1,3 +1,35 @@
+# Run Command
+
+### Train model:
+
+model options: nearest, adaboost, forest
+
+```
+./orient.py train train-data.txt model_file.txt [model]
+```
+
+Example:
+
+```
+time ./orient.py train train-data.txt nearest_model.txt nearest
+time ./orient.py train train-data.txt adaboost_model.txt adaboost
+time ./orient.py train train-data.txt forest_model.txt forest
+```
+
+### Test:
+
+```
+./orient.py test test-data.txt model_file.txt [model]
+```
+
+Example:
+
+```
+time ./orient.py test test-data.txt nearest_model.txt nearest
+time ./orient.py test test-data.txt adaboost_model.txt adaboost
+time ./orient.py test test-data.txt forest_model.txt forest
+```
+
 # Design and implemntation
 
 ### Nearest model:
@@ -128,7 +160,6 @@ Model           Accuracy      Training Time     Classify Time
 Nearest K       0.7167        1s                 >1000s
 Adaboost        0.6938        400s               0.1s
 Forest          0.6604        30s                2s
-Best(Adaboost)  0.6938        400s               0.1s
 ```
 
 # Sampling: test image easily misclassified.
